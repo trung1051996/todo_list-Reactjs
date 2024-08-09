@@ -7,6 +7,7 @@ import InputGroup from "react-bootstrap/InputGroup";
 import Swal from "sweetalert2";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
 import React, { useState, useEffect } from "react";
 
 function App() {
@@ -14,28 +15,41 @@ function App() {
   const [input, setInput] = useState("");
   const [id, setId] = useState(0);
 
-  // Load todos from localStorage
-  // useEffect(() => {
-  //   console.log("Saved todos:", localStorage.getItem("todos"));
-  //   const savedTodos = localStorage.getItem("todos");
-  //   if (savedTodos) {
-  //     try {
-  //       const parsedTodos = JSON.parse(savedTodos);
-  //       setTodos(parsedTodos);
-  //       if (parsedTodos.length > 0) {
-  //         setId(parsedTodos[parsedTodos.length - 1].id + 1); // Ensure unique ID for new todos
-  //       }
-  //     } catch (error) {
-  //       console.error("Failed to parse todos from localStorage", error);
-  //     }
-  //   }
-  // }, []);
+  // save todo change
+  useEffect(() => {
+    // Kiểm tra nếu todos là một mảng trước khi lưu
+    if (Array.isArray(todos) && todos.length > 0) {
+      let newtodo = JSON.stringify(todos);
+      localStorage.setItem("todos", newtodo);
+    } else {
+      console.log("Todos is empty or not an array:", todos);
+    }
+  }, [todos]);
+  //Load todos from localStorage reload
+  useEffect(() => {
+    // get data from localStorage
+    const savedTodos = localStorage.getItem("todos");
 
-  // // Save todos to localStorage whenever todos change
-  // useEffect(() => {
-  //   console.log("Saving todos to localStorage:", todos);
-  //   localStorage.setItem("todos", JSON.stringify(todos));
-  // }, [todos]);
+    if (savedTodos) {
+      // Chỉ parse nếu dữ liệu tồn tại và không bị lỗi
+      try {
+        let todosArray = JSON.parse(savedTodos);
+        console.log("arr", todosArray);
+
+        // Kiểm tra nếu todosArray là một mảng trước khi cập nhật state
+        if (Array.isArray(todosArray)) {
+          setTodos(todosArray);
+        } else {
+          console.error("Saved todos is not an array:", todosArray);
+        }
+      } catch (error) {
+        console.error("Failed to parse todos from localStorage", error);
+      }
+    } else {
+      console.log("No todos found in localStorage");
+    }
+  }, []);
+
   const addTodo = () => {
     const trimmedInput = input.trim();
     const isExisting = todos.some((todo) => todo.text === trimmedInput);
@@ -77,6 +91,7 @@ function App() {
     }).then((result) => {
       if (result.isConfirmed) {
         let newTodo = todos.filter((todo) => todo.id !== id);
+        localStorage.removeItem("todos");
         setTodos(newTodo);
         toast.success("Deleted successfully");
       } else if (result.dismiss === Swal.DismissReason.cancel) {
@@ -133,6 +148,66 @@ function App() {
       }
     });
   };
+
+  // loading
+  // loadding data
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Giả lập hiệu ứng loading trong 1 giây
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const Main = () => {
+    console.log("todo", todos);
+    return (
+      <>
+        <div>
+          {todos == 0 ? (
+            <span className="emty-todo">No todo list</span>
+          ) : (
+            todos.map((todo) => (
+              <div key={todo.id} className="list">
+                <span className={todo.status ? "name-todo_line" : "name-todo"}>
+                  {todo.text}
+                </span>
+                <span>
+                  <input
+                    className="checkbox"
+                    type="checkbox"
+                    checked={todo.status}
+                    onChange={() => {
+                      handleCheckbox(todo.id);
+                    }}
+                  />
+                </span>
+                <div>
+                  <button
+                    className="button but-up"
+                    onClick={() => updateID(todo.id, todo.text)}
+                  >
+                    Update
+                  </button>{" "}
+                  |{" "}
+                  <button
+                    onClick={() => {
+                      deleteId(todo.id, todo.text);
+                    }}
+                    className="button but-de"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </>
+    );
+  };
   return (
     <div className="App">
       <ToastContainer position="top-center" autoClose={1000} />
@@ -164,46 +239,12 @@ function App() {
             <span className="actions">Update | Delete</span>
           </div>
           <div className="list-display">
-            {todos === 0 ? (
-              <span className="emty-todo">No todo list</span>
+            {loading ? (
+              <div class="container2">
+                <div class="progress-6"></div>
+              </div>
             ) : (
-              todos.map((todo) => (
-                <div key={todo.id} className="list">
-                  <span
-                    className={todo.status ? "name-todo_line" : "name-todo"}
-                  >
-                    {todo.text}
-                  </span>
-                  <span>
-                    <input
-                      className="checkbox"
-                      type="checkbox"
-                      checked={todo.status}
-                      onChange={() => {
-                        handleCheckbox(todo.id);
-                      }}
-                    />
-                  </span>
-
-                  <div>
-                    <button
-                      className="button but-up"
-                      onClick={() => updateID(todo.id, todo.text)}
-                    >
-                      Update
-                    </button>{" "}
-                    |{" "}
-                    <button
-                      onClick={() => {
-                        deleteId(todo.id, todo.text);
-                      }}
-                      className="button but-de"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))
+              <Main />
             )}
           </div>
         </div>
