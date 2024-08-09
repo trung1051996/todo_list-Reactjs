@@ -166,7 +166,7 @@ function App() {
     return (
       <>
         <div>
-          {todos == 0 ? (
+          {todos === 0 ? (
             <span className="emty-todo">No todo list</span>
           ) : (
             todos.map((todo) => (
